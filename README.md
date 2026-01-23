@@ -1,62 +1,132 @@
-﻿# CosyVoice-JP
+# CosyVoice-JP
 
-CosyVoice3 縺ｮ譌･譛ｬ隱槫ｯｾ蠢懊ヵ繧ｩ繝ｼ繧ｯ迚・- Windows 繝阪う繝・ぅ繝門ｯｾ蠢・+ Whisper 閾ｪ蜍墓枚蟄苓ｵｷ縺薙＠邨ｱ蜷・
+CosyVoice3 の日本語対応フォーク版 - Windows ネイティブ対応 + Whisper 自動文字起こし統合
+
 ![CosyVoice-JP GUI](./asset/CosyVoiceJP-GUI.png)
 
-## 迚ｹ蠕ｴ
+## 特徴
 
-- **GUI螳悟・譌･譛ｬ隱槫喧**: 縺吶∋縺ｦ縺ｮUI隕∫ｴ繧呈律譛ｬ隱槭↓鄙ｻ險ｳ
-- **Whisper閾ｪ蜍墓枚蟄苓ｵｷ縺薙＠**: 繝励Ο繝ｳ繝励ヨ髻ｳ螢ｰ縺ｮ蜀・ｮｹ繧定・蜍輔〒繝・く繧ｹ繝亥喧
-- **Windows繝阪う繝・ぅ繝門ｯｾ蠢・*: DLL繝ｭ繝ｼ繝牙撫鬘後》orchcodec蝠城｡後ｒ隗｣豎ｺ
-- **繝ｯ繝ｳ繧ｯ繝ｪ繝・け襍ｷ蜍・*: run.bat 繧偵ム繝悶Ν繧ｯ繝ｪ繝・け縺吶ｋ縺縺代〒襍ｷ蜍・- **閾ｪ蜍輔・繝ｼ繝磯∈謚・*: 菴ｿ逕ｨ荳ｭ縺ｮ繝昴・繝医ｒ閾ｪ蜍募屓驕ｿ
+- **GUI完全日本語化**: すべてのUI要素を日本語に翻訳
+- **Whisper自動文字起こし**: プロンプト音声の内容を自動でテキスト化
+- **Windowsネイティブ対応**: DLLロード問題、torchcodec問題を解決
+- **ワンクリック起動**: `run.bat` をダブルクリックするだけで起動
+- **自動ポート選択**: 使用中のポートを自動回避
 
-## 蜈・Μ繝昴ず繝医Μ縺九ｉ縺ｮ螟画峩轤ｹ
+## 元リポジトリからの変更点
 
-| 繝輔ぃ繧､繝ｫ | 螟画峩蜀・ｮｹ |
+| ファイル | 変更内容 |
 |----------|----------|
-| webui.py | GUI譌･譛ｬ隱槫喧縲仝hisper邨ｱ蜷医仝indows莠呈鋤諤ｧ菫ｮ豁｣ |
-| launcher.py | 閾ｪ蜍輔・繝ｼ繝磯∈謚槭√ヶ繝ｩ繧ｦ繧ｶ閾ｪ蜍戊ｵｷ蜍包ｼ域眠隕擾ｼ・|
-| run.bat | 繝ｯ繝ｳ繧ｯ繝ｪ繝・け襍ｷ蜍輔せ繧ｯ繝ｪ繝励ヨ・域眠隕擾ｼ・|
-| cosyvoice/utils/file_utils.py | torchcodec蝠城｡後・蝗樣∩繝代ャ繝・|
+| `webui.py` | GUI日本語化、Whisper統合、Windows互換性修正 |
+| `launcher.py` | 自動ポート選択、ブラウザ自動起動（新規） |
+| `run.bat` | ワンクリック起動スクリプト（新規） |
+| `cosyvoice/utils/file_utils.py` | torchcodec問題の回避パッチ |
 
-## 蜍穂ｽ懃腸蠅・
-- OS: Windows 10/11
-- GPU: NVIDIA GPU・・UDA蟇ｾ蠢懶ｼ・- Python: 3.10
-- 迚ｹ險・ RTX 5090 蟇ｾ蠢懶ｼ・yTorch nightly cu128・・
-## 繧､繝ｳ繧ｹ繝医・繝ｫ謇矩・
-### 1. 繝ｪ繝昴ず繝医Μ縺ｮ繧ｯ繝ｭ繝ｼ繝ｳ
+## 動作環境
 
+- **OS**: Windows 10/11
+- **GPU**: NVIDIA GPU（CUDA対応）
+- **Python**: 3.10
+- **特記**: RTX 5090 対応（PyTorch nightly cu128）
+
+## インストール手順
+
+### 1. リポジトリのクローン
+
+```bash
 git clone --recursive https://github.com/hiroki-abe-58/CosyVoice-JP.git
 cd CosyVoice-JP
 git submodule update --init --recursive
+```
 
-### 2. Conda迺ｰ蠅・・菴懈・
+### 2. Conda環境の作成
 
+```bash
 conda create -n cosyvoice3 python=3.10 -y
 conda activate cosyvoice3
+```
 
-### 3. 萓晏ｭ倬未菫ゅ・繧､繝ｳ繧ｹ繝医・繝ｫ
+### 3. 依存関係のインストール
 
-# PyTorch・・UDA 12.8蟇ｾ蠢懶ｼ・pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
+```bash
+# PyTorch（CUDA 12.8対応、RTX 5090の場合はnightly必須）
+pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
 
-# 縺昴・莉・pip install -r requirements.txt
-pip install openai-whisper soundfile
+# その他の依存関係
+pip install -r requirements.txt
+
+# Whisper（自動文字起こし用）
+pip install openai-whisper
+
+# Windows互換性のための追加パッケージ
+pip install soundfile
 pip install "ruamel.yaml>=0.15.0,<0.18.0"
+```
 
-### 4. 繝｢繝・Ν縺ｮ繝繧ｦ繝ｳ繝ｭ繝ｼ繝・
+### 4. モデルのダウンロード
+
+```python
 from huggingface_hub import snapshot_download
 snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', 
                   local_dir='pretrained_models/Fun-CosyVoice3-0.5B-2512')
+```
 
-### 5. 襍ｷ蜍・
-run.bat 繧偵ム繝悶Ν繧ｯ繝ｪ繝・け
+### 5. 起動
 
-## 繝ｩ繧､繧ｻ繝ｳ繧ｹ
+`run.bat` をダブルクリック、またはコマンドラインから：
 
-- CosyVoice: Apache License 2.0 (c) Alibaba Inc
-- Whisper: MIT License (c) OpenAI
+```bash
+conda activate cosyvoice3
+python launcher.py
+```
 
-## 蜈崎ｲｬ莠矩・
-譛ｬ繧ｽ繝輔ヨ繧ｦ繧ｧ繧｢縺ｯ縲檎樟迥ｶ縺ｮ縺ｾ縺ｾ縲肴署萓帙＆繧後∪縺吶る浹螢ｰ繧ｯ繝ｭ繝ｼ繝ｳ謚陦薙・謔ｪ逕ｨ縺ｯ蝗ｺ縺冗ｦ√§縺ｾ縺吶・逕滓・縺輔ｌ縺滄浹螢ｰ縺ｮ蛻ｩ逕ｨ縺ｯ蛻ｩ逕ｨ閠・・霄ｫ縺ｮ雋ｬ莉ｻ縺ｫ縺翫＞縺ｦ陦後▲縺ｦ縺上□縺輔＞縲・
-## 隰晁ｾ・
-蜈・Μ繝昴ず繝医Μ: https://github.com/FunAudioLLM/CosyVoice
+## 使い方
+
+### 3秒ボイスクローン
+1. プロンプト音声をアップロードまたは録音
+2. 「自動文字起こし」ボタンでテキストを取得
+3. 合成テキストを入力
+4. 「音声を生成」をクリック
+
+### 多言語クローン
+1. プロンプト音声をアップロード（例：英語）
+2. 合成テキストを別の言語で入力（例：日本語）
+3. 「音声を生成」をクリック
+
+### 自然言語制御
+1. プロンプト音声をアップロード
+2. 指示テキストを入力（例：「優しく話して」「早口で」）
+3. 「音声を生成」をクリック
+
+## ライセンス
+
+- **CosyVoice**: Apache License 2.0 (c) Alibaba Inc
+- **Whisper**: MIT License (c) OpenAI
+- **Matcha-TTS**: MIT License
+
+本フォーク版も Apache License 2.0 に従います。
+
+## 免責事項
+
+- 本ソフトウェアは「現状のまま」提供され、明示または黙示を問わず、いかなる種類の保証もありません
+- 音声クローン技術の悪用（なりすまし、詐欺、名誉毀損等）は固く禁じます
+- 生成された音声の利用については、利用者自身の責任において行ってください
+- 本ソフトウェアの使用により生じたいかなる損害についても、開発者は責任を負いません
+- 各国・地域の法令を遵守してご利用ください
+
+## 謝辞
+
+- 元リポジトリ: [FunAudioLLM/CosyVoice](https://github.com/FunAudioLLM/CosyVoice)
+- Alibaba FunAudioLLM チームの素晴らしい研究に感謝します
+- [OpenAI Whisper](https://github.com/openai/whisper)
+- [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS)
+
+## 引用
+
+```bibtex
+@article{du2025cosyvoice,
+  title={CosyVoice 3: Towards In-the-wild Speech Generation via Scaling-up and Post-training},
+  author={Du, Zhihao and others},
+  journal={arXiv preprint arXiv:2505.17589},
+  year={2025}
+}
+```
