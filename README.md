@@ -1,137 +1,36 @@
-# CosyVoice-JP
+![SVG Banners](https://svg-banners.vercel.app/api?type=origin&text1=CosyVoice🤠&text2=Text-to-Speech%20💖%20Large%20Language%20Model&width=800&height=210)
 
-**CosyVoice3 の日本語対応フォーク版** - 世界初のWindowsネイティブ完全対応 + Whisper自動文字起こし統合
+## CosyVoice — Apple Silicon Fork
 
-![CosyVoice-JP GUI](./asset/CosyVoiceJP-GUI.png)
+This is a fork of [FunAudioLLM/CosyVoice](https://github.com/FunAudioLLM/CosyVoice) with **native Apple Silicon (MPS) support** and [CosyVoice-JP](https://github.com/hiroki-abe-58/CosyVoice-JP) Japanese localization.
 
----
+### What's different from upstream
 
-## Why CosyVoice-JP?
+| Feature | CUDA (Linux) | MPS (Apple Silicon) | CPU |
+|---------|:---:|:---:|:---:|
+| Inference | ✅ | ✅ | ✅ |
+| fp16 | ✅ | ✅ | ❌ |
+| JIT | ✅ | ✅ | ❌ |
+| TensorRT | ✅ | ❌ | ❌ |
+| vLLM | ✅ | ❌ | ❌ |
+| Training (DeepSpeed/DDP) | ✅ | ❌ | ❌ |
 
-元のCosyVoiceは **Linux専用** として開発されており、Windowsでの動作は公式にサポートされていませんでした。
-本フォークは、複数のWindows固有の問題を解決し、**Windowsネイティブ環境での完全動作** を実現しました。
+### Upstream links
 
----
+**Fun-CosyVoice 3.0**: [Demos](https://funaudiollm.github.io/cosyvoice3/); [Paper](https://arxiv.org/pdf/2505.17589); [Modelscope](https://www.modelscope.cn/models/FunAudioLLM/Fun-CosyVoice3-0.5B-2512); [Huggingface](https://huggingface.co/FunAudioLLM/Fun-CosyVoice3-0.5B-2512); [CV3-Eval](https://github.com/FunAudioLLM/CV3-Eval)
 
-## 解決した技術的課題
+**CosyVoice 2.0**: [Demos](https://funaudiollm.github.io/cosyvoice2/); [Paper](https://arxiv.org/pdf/2412.10117); [Modelscope](https://www.modelscope.cn/models/iic/CosyVoice2-0.5B); [HuggingFace](https://huggingface.co/FunAudioLLM/CosyVoice2-0.5B)
 
-### Windows互換性の問題
-
-| 問題 | 症状 | 原因 | 解決策 |
-|------|------|------|--------|
-| **DLLロードエラー** | `OSError: Error loading c10.dll` | GradioがPyTorchより先にロードされるとDLL依存関係が壊れる | Pythonモジュールのインポート順序を最適化（torch → gradio） |
-| **torchcodecエラー** | `TorchCodec is required for load_with_torchcodec` | torchaudioがWindowsで未サポートのtorchcodecを要求 | soundfileによるフォールバック処理を実装 |
-| **torchaudio API変更** | `torchaudio.info()` が動作しない | PyTorch nightly版でのAPI破壊的変更 | soundfile.info()で代替実装 |
-| **ruamel.yaml互換性** | `'Loader' object has no attribute 'max_depth'` | HyperPyYAMLとの互換性問題 | バージョン制限 `>=0.15.0,<0.18.0` で解決 |
-| **sox依存問題** | Linux専用の音声処理ツールに依存 | 元コードがsoxを前提 | 代替ライブラリで完全置換 |
-
-### CosyVoice3 固有の問題
-
-| 問題 | 症状 | 原因 | 解決策 |
-|------|------|------|--------|
-| **プリセット音声が使えない** | SFTモードでエラー | CosyVoice3は`spk2info.pt`を持たない | プリセット音声モードをUIから削除 |
-| **音声が中国語っぽくなる** | 日本語テキストが正しく発音されない | `<\|endofprompt\|>`トークンの欠落 | 各推論モードで自動的にトークンを付与 |
-| **inference_instruct非対応** | instructモードでエラー | CosyVoice3は`inference_instruct2`のみ対応 | 正しいAPI呼び出しに修正 |
+**CosyVoice 1.0**: [Demos](https://fun-audio-llm.github.io); [Paper](https://funaudiollm.github.io/pdf/CosyVoice_v1.pdf); [Modelscope](https://www.modelscope.cn/models/iic/CosyVoice-300M); [HuggingFace](https://huggingface.co/FunAudioLLM/CosyVoice-300M)
 
 ---
 
-## 特徴
-
-### 1. Windowsネイティブ完全対応
-- **Linux専用だったCosyVoiceをWindowsで動作可能に**
-- RTX 5090 (sm_120) などの最新GPUにも対応
-- PyTorch nightly (CUDA 12.8) での動作確認済み
-- ワンクリック起動（`run.bat`をダブルクリックするだけ）
-- 自動ポート選択（使用中のポートを自動回避、7865から順に検索）
-- ブラウザ自動起動（8秒後に自動でWebUIを開く）
-
-### 2. GUI完全日本語化
-- すべてのUI要素を日本語に翻訳
-- 操作手順も日本語で表示
-- エラーメッセージ・警告メッセージも日本語化
-- モード名: 「3秒ボイスクローン」「多言語クローン」「自然言語制御」
-
-### 3. Whisper自動文字起こし統合
-- OpenAI Whisperをボタン一つで呼び出し
-- プロンプト音声の内容を自動でテキスト化
-- 言語自動検出対応
-- モデルサイズ選択可能（tiny/base/small/medium/large）
-- 遅延ロード実装（初回使用時のみモデルをロード）
-
-### 4. 言語選択機能（発音制御）
-- 出力言語を明示的に指定可能
-- 「自然言語制御」モードで言語ヒントを自動付与
-- 対応言語: 日本語、英語、中国語、韓国語、ドイツ語、フランス語、スペイン語、イタリア語、ロシア語
-
-### 5. CosyVoice3 最適化
-- `<|endofprompt|>`トークンの自動付与
-- 各推論モード（zero_shot, cross_lingual, instruct2）の適切な使い分け
-- 声質クローン優先モード（言語制御より声質を重視）
-
-### 6. エラーハンドリング強化
-- 音声ファイル読み込みエラーの詳細表示
-- 音声生成エラー時のスタックトレース出力
-- サンプリングレートチェック（16kHz以上を要求）
-
----
-
-## 元リポジトリからの変更点
-
-| ファイル | 変更内容 |
-|----------|----------|
-| `webui.py` | GUI日本語化、Whisper統合、Windows互換性修正、言語選択機能、CosyVoice3 API対応、エラーハンドリング強化 |
-| `launcher.py` | 自動ポート選択、ブラウザ自動起動、環境変数設定（**新規作成**） |
-| `run.bat` | ワンクリック起動スクリプト、Conda環境自動有効化（**新規作成**） |
-| `cosyvoice/utils/file_utils.py` | torchcodec問題の回避、soundfileフォールバック、numpy変換処理 |
-| `.gitignore` | Windows固有ファイル、大容量モデルファイルの除外追加 |
-
----
-
-## 動作環境
-
-| 項目 | 要件 |
-|------|------|
-| **OS** | Windows 10/11（Linux非依存） |
-| **GPU** | NVIDIA GPU（CUDA対応） |
-| **VRAM** | 8GB以上推奨 |
-| **Python** | 3.10 |
-| **PyTorch** | nightly版推奨（CUDA 12.8対応） |
-| **特記** | RTX 5090 (sm_120) 対応確認済み |
-
----
-
-## インストール手順
-
-### 1. リポジトリのクローン
-
-```bash
-git clone --recursive https://github.com/hiroki-abe-58/CosyVoice-JP.git
-cd CosyVoice-JP
-git submodule update --init --recursive
-```
-
-### 2. Conda環境の作成
-
-```bash
-conda create -n cosyvoice3 python=3.10 -y
-conda activate cosyvoice3
-```
-
-### 3. 依存関係のインストール
-
-```bash
-# PyTorch（CUDA 12.8対応、RTX 5090の場合はnightly必須）
-pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
-
-# その他の依存関係
-pip install -r requirements.txt
+## Install
 
 ### macOS Apple Silicon (M1/M2/M3/M4)
 
-For Apple Silicon Macs, use the dedicated setup script:
-
 ``` sh
-git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git
+git clone --recursive https://github.com/jasagiri/CosyVoice.git
 cd CosyVoice
 bash setup_macos.sh
 ```
@@ -144,142 +43,149 @@ conda activate cosyvoice
 conda install -c conda-forge pynini==2.1.5 -y
 pip install torch torchaudio
 pip install -r requirements.txt
+git submodule update --init --recursive
 ```
 
-**Apple Silicon notes:**
-- Inference runs on MPS (Metal Performance Shaders) — faster than CPU
-- TensorRT and vLLM are not available (CUDA-only)
-- Training with DeepSpeed/DDP is not supported
-- For CUDA environments (Linux), use `pip install -r requirements-cuda.txt` instead
+### Linux with CUDA
 
-# Whisper（自動文字起こし用）
-pip install openai-whisper
-
-# Windows互換性のための追加パッケージ
-pip install soundfile
-pip install "ruamel.yaml>=0.15.0,<0.18.0"
+``` sh
+git clone --recursive https://github.com/jasagiri/CosyVoice.git
+cd CosyVoice
+conda create -n cosyvoice -y python=3.10
+conda activate cosyvoice
+pip install -r requirements-cuda.txt
 ```
 
-### 4. モデルのダウンロード
+### Model download
 
-```python
+We strongly recommend that you download our pretrained `Fun-CosyVoice3-0.5B` `CosyVoice2-0.5B` `CosyVoice-300M` `CosyVoice-300M-SFT` `CosyVoice-300M-Instruct` model and `CosyVoice-ttsfrd` resource.
+
+``` python
+# modelscope SDK model download
+from modelscope import snapshot_download
+snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', local_dir='pretrained_models/Fun-CosyVoice3-0.5B')
+snapshot_download('iic/CosyVoice2-0.5B', local_dir='pretrained_models/CosyVoice2-0.5B')
+snapshot_download('iic/CosyVoice-300M', local_dir='pretrained_models/CosyVoice-300M')
+snapshot_download('iic/CosyVoice-300M-SFT', local_dir='pretrained_models/CosyVoice-300M-SFT')
+snapshot_download('iic/CosyVoice-300M-Instruct', local_dir='pretrained_models/CosyVoice-300M-Instruct')
+snapshot_download('iic/CosyVoice-ttsfrd', local_dir='pretrained_models/CosyVoice-ttsfrd')
+
+# for oversea users, huggingface SDK model download
 from huggingface_hub import snapshot_download
-snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', 
-                  local_dir='pretrained_models/Fun-CosyVoice3-0.5B-2512')
+snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', local_dir='pretrained_models/Fun-CosyVoice3-0.5B')
+snapshot_download('FunAudioLLM/CosyVoice2-0.5B', local_dir='pretrained_models/CosyVoice2-0.5B')
+snapshot_download('FunAudioLLM/CosyVoice-300M', local_dir='pretrained_models/CosyVoice-300M')
+snapshot_download('FunAudioLLM/CosyVoice-300M-SFT', local_dir='pretrained_models/CosyVoice-300M-SFT')
+snapshot_download('FunAudioLLM/CosyVoice-300M-Instruct', local_dir='pretrained_models/CosyVoice-300M-Instruct')
+snapshot_download('FunAudioLLM/CosyVoice-ttsfrd', local_dir='pretrained_models/CosyVoice-ttsfrd')
 ```
 
-### 5. 起動
+Optionally, you can unzip `ttsfrd` resource and install `ttsfrd` package for better text normalization performance.
 
-**ワンクリック起動:**
-`run.bat` をダブルクリック
+Notice that this step is not necessary. If you do not install `ttsfrd` package, we will use wetext by default.
 
-**コマンドラインから:**
-```bash
-conda activate cosyvoice3
-python launcher.py
+``` sh
+cd pretrained_models/CosyVoice-ttsfrd/
+unzip resource.zip -d .
+pip install ttsfrd_dependency-0.1-py3-none-any.whl
+pip install ttsfrd-0.4.2-cp310-cp310-linux_x86_64.whl
 ```
 
-ブラウザが自動で開き、`http://localhost:7865` でWebUIにアクセスできます。
-（ポート7865が使用中の場合は自動的に次の空きポートを使用）
+### Basic Usage
+
+We strongly recommend using `Fun-CosyVoice3-0.5B` for better performance.
+Follow the code in `example.py` for detailed usage of each model.
+```sh
+python example.py
+```
+
+#### vLLM Usage (CUDA only)
+CosyVoice2/3 now supports **vLLM 0.11.x+ (V1 engine)** and **vLLM 0.9.0 (legacy)**.
+
+``` sh
+conda create -n cosyvoice_vllm --clone cosyvoice
+conda activate cosyvoice_vllm
+# for vllm==0.9.0
+pip install vllm==v0.9.0 transformers==4.51.3 numpy==1.26.4
+# for vllm>=0.11.0
+pip install vllm==v0.11.0 transformers==4.57.1 numpy==1.26.4
+python vllm_example.py
+```
+
+#### Start web demo
+
+``` python
+# change iic/CosyVoice-300M-SFT for sft inference, or iic/CosyVoice-300M-Instruct for instruct inference
+python3 webui.py --port 50000 --model_dir pretrained_models/CosyVoice-300M
+```
+
+#### Build for deployment (CUDA only)
+
+``` sh
+cd runtime/python
+docker build -t cosyvoice:v1.0 .
+# for grpc usage
+docker run -d --runtime=nvidia -p 50000:50000 cosyvoice:v1.0 /bin/bash -c "cd /opt/CosyVoice/CosyVoice/runtime/python/grpc && python3 server.py --port 50000 --max_conc 4 --model_dir iic/CosyVoice-300M && sleep infinity"
+cd grpc && python3 client.py --port 50000 --mode <sft|zero_shot|cross_lingual|instruct>
+# for fastapi usage
+docker run -d --runtime=nvidia -p 50000:50000 cosyvoice:v1.0 /bin/bash -c "cd /opt/CosyVoice/CosyVoice/runtime/python/fastapi && python3 server.py --port 50000 --model_dir iic/CosyVoice-300M && sleep infinity"
+cd fastapi && python3 client.py --port 50000 --mode <sft|zero_shot|cross_lingual|instruct>
+```
 
 ---
 
-## 使い方
+## Apple Silicon Technical Details
 
-### 3秒ボイスクローン（推奨）
-最も高品質な声質クローンが可能なモード
+This fork introduces a device abstraction layer (`cosyvoice/utils/device.py`) that automatically selects the best available backend:
 
-1. プロンプト音声をアップロードまたは録音（3〜30秒）
-2. 「自動文字起こし (Whisper)」ボタンでテキストを取得
-3. 合成テキストを入力
-4. 「音声を生成」をクリック
+- **CUDA** (Linux/Windows with NVIDIA GPU) — full feature set
+- **MPS** (macOS Apple Silicon) — inference with fp16 and JIT support
+- **CPU** — fallback for all platforms
 
-### 多言語クローン
-プロンプト音声と異なる言語で出力するモード
+TensorRT, vLLM, and DeepSpeed are CUDA-only and are gracefully disabled on non-CUDA platforms with appropriate warnings.
 
-1. プロンプト音声をアップロード（例：英語の音声）
-2. 合成テキストを別の言語で入力（例：日本語のテキスト）
-3. 「音声を生成」をクリック
+Upstream PR: [FunAudioLLM/CosyVoice#1869](https://github.com/FunAudioLLM/CosyVoice/pull/1869)
 
-### 自然言語制御
-話し方を自然言語で指示するモード
+## Japanese Localization (CosyVoice-JP)
 
-1. プロンプト音声をアップロード
-2. 指示テキストを入力（例：「優しく話して」「早口で」「囁いて」「悲しそうに」）
-3. 言語選択で出力言語を指定（オプション）
-4. 「音声を生成」をクリック
+This fork incorporates changes from [CosyVoice-JP](https://github.com/hiroki-abe-58/CosyVoice-JP) by @hiroki-abe-58:
 
----
+- **Japanese WebUI** — `webui.py` with Japanese interface strings
+- **Windows native support** — DLL load order fix, torchaudio/soundfile fallback, sox alternative
+- **Port auto-detection** — `launcher.py` for automatic free port selection
+- **Windows quick start** — `run.bat` for one-click launch
 
-## トラブルシューティング
+CosyVoice natively supports Japanese as one of its 9 languages. The upstream model (`Fun-CosyVoice3-0.5B`) works for Japanese TTS out of the box — no additional Japanese-specific model is required.
 
-### DLLロードエラーが発生する
-```
-OSError: Error loading c10.dll
-```
-→ `webui.py`の先頭で`torch`を`gradio`より先にインポートしているか確認
+## Credits
 
-### torchcodecエラーが発生する
-```
-TorchCodec is required for load_with_torchcodec
-```
-→ `pip install soundfile` を実行し、`file_utils.py`が更新されているか確認
+- [FunAudioLLM/CosyVoice](https://github.com/FunAudioLLM/CosyVoice) — Original project by Alibaba
+- [CosyVoice-JP](https://github.com/hiroki-abe-58/CosyVoice-JP) by @hiroki-abe-58 — Japanese localization and Windows compatibility
 
-### ポートが使用中でエラーになる
-```
-OSError: Cannot find empty port in range
-```
-→ 既存のPythonプロセスを終了するか、`launcher.py`が最新か確認
+## Citations
 
-### 音声が中国語っぽくなる
-→ 「自然言語制御」モードで言語選択を「日本語」に設定
+``` bibtex
+@article{du2024cosyvoice,
+  title={Cosyvoice: A scalable multilingual zero-shot text-to-speech synthesizer based on supervised semantic tokens},
+  author={Du, Zhihao and Chen, Qian and Zhang, Shiliang and Hu, Kai and Lu, Heng and Yang, Yexin and Hu, Hangrui and Zheng, Siqi and Gu, Yue and Ma, Ziyang and others},
+  journal={arXiv preprint arXiv:2407.05407},
+  year={2024}
+}
 
-### ruamel.yamlエラー
-```
-'Loader' object has no attribute 'max_depth'
-```
-→ `pip install "ruamel.yaml>=0.15.0,<0.18.0"` を実行
+@article{du2024cosyvoice,
+  title={Cosyvoice 2: Scalable streaming speech synthesis with large language models},
+  author={Du, Zhihao and Wang, Yuxuan and Chen, Qian and Shi, Xian and Lv, Xiang and Zhao, Tianyu and Gao, Zhifu and Yang, Yexin and Gao, Changfeng and Wang, Hui and others},
+  journal={arXiv preprint arXiv:2412.10117},
+  year={2024}
+}
 
----
-
-## ライセンス
-
-| コンポーネント | ライセンス |
-|----------------|------------|
-| CosyVoice | Apache License 2.0 (c) Alibaba Inc |
-| Whisper | MIT License (c) OpenAI |
-| Matcha-TTS | MIT License |
-| 本フォーク | Apache License 2.0 |
-
----
-
-## 免責事項
-
-- 本ソフトウェアは「現状のまま」提供され、明示または黙示を問わず、いかなる種類の保証もありません
-- **音声クローン技術の悪用（なりすまし、詐欺、名誉毀損、ディープフェイク等）は固く禁じます**
-- 生成された音声の利用については、利用者自身の責任において行ってください
-- 本ソフトウェアの使用により生じたいかなる損害についても、開発者は責任を負いません
-- 各国・地域の法令を遵守してご利用ください
-- 他者の権利（肖像権、著作権、パブリシティ権等）を侵害しないようご注意ください
-
----
-
-## 謝辞
-
-- **元リポジトリ**: [FunAudioLLM/CosyVoice](https://github.com/FunAudioLLM/CosyVoice)
-- Alibaba FunAudioLLM チームの素晴らしい研究に感謝します
-- [OpenAI Whisper](https://github.com/openai/whisper)
-- [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS)
-
----
-
-## 引用
-
-```bibtex
 @article{du2025cosyvoice,
   title={CosyVoice 3: Towards In-the-wild Speech Generation via Scaling-up and Post-training},
-  author={Du, Zhihao and Gao, Changfeng and Wang, Yuxuan and others},
+  author={Du, Zhihao and Gao, Changfeng and Wang, Yuxuan and Yu, Fan and Zhao, Tianyu and Wang, Hao and Lv, Xiang and Wang, Hui and Shi, Xian and An, Keyu and others},
   journal={arXiv preprint arXiv:2505.17589},
   year={2025}
 }
 ```
+
+## Disclaimer
+The content provided above is for academic purposes only and is intended to demonstrate technical capabilities. Some examples are sourced from the internet. If any content infringes on your rights, please contact us to request its removal.
