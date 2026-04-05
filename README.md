@@ -1,264 +1,259 @@
-![SVG Banners](https://svg-banners.vercel.app/api?type=origin&text1=CosyVoice🤠&text2=Text-to-Speech%20💖%20Large%20Language%20Model&width=800&height=210)
+# CosyVoice-JP
 
-## 👉🏻 CosyVoice 👈🏻
+**CosyVoice3 の日本語対応フォーク版** - 世界初のWindowsネイティブ完全対応 + Whisper自動文字起こし統合
 
-**Fun-CosyVoice 3.0**: [Demos](https://funaudiollm.github.io/cosyvoice3/); [Paper](https://arxiv.org/pdf/2505.17589); [Modelscope](https://www.modelscope.cn/models/FunAudioLLM/Fun-CosyVoice3-0.5B-2512); [Huggingface](https://huggingface.co/FunAudioLLM/Fun-CosyVoice3-0.5B-2512); [CV3-Eval](https://github.com/FunAudioLLM/CV3-Eval)
+![CosyVoice-JP GUI](./asset/CosyVoiceJP-GUI.png)
 
-**CosyVoice 2.0**: [Demos](https://funaudiollm.github.io/cosyvoice2/); [Paper](https://arxiv.org/pdf/2412.10117); [Modelscope](https://www.modelscope.cn/models/iic/CosyVoice2-0.5B); [HuggingFace](https://huggingface.co/FunAudioLLM/CosyVoice2-0.5B)
+---
 
-**CosyVoice 1.0**: [Demos](https://fun-audio-llm.github.io); [Paper](https://funaudiollm.github.io/pdf/CosyVoice_v1.pdf); [Modelscope](https://www.modelscope.cn/models/iic/CosyVoice-300M); [HuggingFace](https://huggingface.co/FunAudioLLM/CosyVoice-300M)
+## Why CosyVoice-JP?
 
-## Highlight🔥
+元のCosyVoiceは **Linux専用** として開発されており、Windowsでの動作は公式にサポートされていませんでした。
+本フォークは、複数のWindows固有の問題を解決し、**Windowsネイティブ環境での完全動作** を実現しました。
 
-**Fun-CosyVoice 3.0** is an advanced text-to-speech (TTS) system based on large language models (LLM), surpassing its predecessor (CosyVoice 2.0) in content consistency, speaker similarity, and prosody naturalness. It is designed for zero-shot multilingual speech synthesis in the wild.
-### Key Features
-- **Language Coverage**: Covers 9 common languages (Chinese, English, Japanese, Korean, German, Spanish, French, Italian, Russian), 18+ Chinese dialects/accents (Guangdong, Minnan, Sichuan, Dongbei, Shan3xi, Shan1xi, Shanghai, Tianjin, Shandong, Ningxia, Gansu, etc.) and meanwhile supports both multi-lingual/cross-lingual zero-shot voice cloning.
-- **Content Consistency & Naturalness**: Achieves state-of-the-art performance in content consistency, speaker similarity, and prosody naturalness.
-- **Pronunciation Inpainting**: Supports pronunciation inpainting of Chinese Pinyin and English CMU phonemes, providing more controllability and thus suitable for production use.
-- **Text Normalization**: Supports reading of numbers, special symbols and various text formats without a traditional frontend module.
-- **Bi-Streaming**: Support both text-in streaming and audio-out streaming, and achieves latency as low as 150ms while maintaining high-quality audio output.
-- **Instruct Support**: Supports various instructions such as languages, dialects, emotions, speed, volume, etc.
+---
 
+## 解決した技術的課題
 
-## Roadmap
+### Windows互換性の問題
 
-- [x] 2025/12
+| 問題 | 症状 | 原因 | 解決策 |
+|------|------|------|--------|
+| **DLLロードエラー** | `OSError: Error loading c10.dll` | GradioがPyTorchより先にロードされるとDLL依存関係が壊れる | Pythonモジュールのインポート順序を最適化（torch → gradio） |
+| **torchcodecエラー** | `TorchCodec is required for load_with_torchcodec` | torchaudioがWindowsで未サポートのtorchcodecを要求 | soundfileによるフォールバック処理を実装 |
+| **torchaudio API変更** | `torchaudio.info()` が動作しない | PyTorch nightly版でのAPI破壊的変更 | soundfile.info()で代替実装 |
+| **ruamel.yaml互換性** | `'Loader' object has no attribute 'max_depth'` | HyperPyYAMLとの互換性問題 | バージョン制限 `>=0.15.0,<0.18.0` で解決 |
+| **sox依存問題** | Linux専用の音声処理ツールに依存 | 元コードがsoxを前提 | 代替ライブラリで完全置換 |
 
-    - [x] release Fun-CosyVoice3-0.5B-2512 base model, rl model and its training/inference script
-    - [x] release Fun-CosyVoice3-0.5B modelscope gradio space
+### CosyVoice3 固有の問題
 
-- [x] 2025/08
+| 問題 | 症状 | 原因 | 解決策 |
+|------|------|------|--------|
+| **プリセット音声が使えない** | SFTモードでエラー | CosyVoice3は`spk2info.pt`を持たない | プリセット音声モードをUIから削除 |
+| **音声が中国語っぽくなる** | 日本語テキストが正しく発音されない | `<\|endofprompt\|>`トークンの欠落 | 各推論モードで自動的にトークンを付与 |
+| **inference_instruct非対応** | instructモードでエラー | CosyVoice3は`inference_instruct2`のみ対応 | 正しいAPI呼び出しに修正 |
 
-    - [x] Thanks to the contribution from NVIDIA Yuekai Zhang, add triton trtllm runtime support and cosyvoice2 grpo training support
+---
 
-- [x] 2025/07
+## 特徴
 
-    - [x] release Fun-CosyVoice 3.0 eval set
+### 1. Windowsネイティブ完全対応
+- **Linux専用だったCosyVoiceをWindowsで動作可能に**
+- RTX 5090 (sm_120) などの最新GPUにも対応
+- PyTorch nightly (CUDA 12.8) での動作確認済み
+- ワンクリック起動（`run.bat`をダブルクリックするだけ）
+- 自動ポート選択（使用中のポートを自動回避、7865から順に検索）
+- ブラウザ自動起動（8秒後に自動でWebUIを開く）
 
-- [x] 2025/05
+### 2. GUI完全日本語化
+- すべてのUI要素を日本語に翻訳
+- 操作手順も日本語で表示
+- エラーメッセージ・警告メッセージも日本語化
+- モード名: 「3秒ボイスクローン」「多言語クローン」「自然言語制御」
 
-    - [x] add CosyVoice2-0.5B vllm support
+### 3. Whisper自動文字起こし統合
+- OpenAI Whisperをボタン一つで呼び出し
+- プロンプト音声の内容を自動でテキスト化
+- 言語自動検出対応
+- モデルサイズ選択可能（tiny/base/small/medium/large）
+- 遅延ロード実装（初回使用時のみモデルをロード）
 
-- [x] 2024/12
+### 4. 言語選択機能（発音制御）
+- 出力言語を明示的に指定可能
+- 「自然言語制御」モードで言語ヒントを自動付与
+- 対応言語: 日本語、英語、中国語、韓国語、ドイツ語、フランス語、スペイン語、イタリア語、ロシア語
 
-    - [x] 25hz CosyVoice2-0.5B released
+### 5. CosyVoice3 最適化
+- `<|endofprompt|>`トークンの自動付与
+- 各推論モード（zero_shot, cross_lingual, instruct2）の適切な使い分け
+- 声質クローン優先モード（言語制御より声質を重視）
 
-- [x] 2024/09
+### 6. エラーハンドリング強化
+- 音声ファイル読み込みエラーの詳細表示
+- 音声生成エラー時のスタックトレース出力
+- サンプリングレートチェック（16kHz以上を要求）
 
-    - [x] 25hz CosyVoice-300M base model
-    - [x] 25hz CosyVoice-300M voice conversion function
+---
 
-- [x] 2024/08
+## 元リポジトリからの変更点
 
-    - [x] Repetition Aware Sampling(RAS) inference for llm stability
-    - [x] Streaming inference mode support, including kv cache and sdpa for rtf optimization
+| ファイル | 変更内容 |
+|----------|----------|
+| `webui.py` | GUI日本語化、Whisper統合、Windows互換性修正、言語選択機能、CosyVoice3 API対応、エラーハンドリング強化 |
+| `launcher.py` | 自動ポート選択、ブラウザ自動起動、環境変数設定（**新規作成**） |
+| `run.bat` | ワンクリック起動スクリプト、Conda環境自動有効化（**新規作成**） |
+| `cosyvoice/utils/file_utils.py` | torchcodec問題の回避、soundfileフォールバック、numpy変換処理 |
+| `.gitignore` | Windows固有ファイル、大容量モデルファイルの除外追加 |
 
-- [x] 2024/07
+---
 
-    - [x] Flow matching training support
-    - [x] WeTextProcessing support when ttsfrd is not available
-    - [x] Fastapi server and client
+## 動作環境
 
-## Evaluation
+| 項目 | 要件 |
+|------|------|
+| **OS** | Windows 10/11（Linux非依存） |
+| **GPU** | NVIDIA GPU（CUDA対応） |
+| **VRAM** | 8GB以上推奨 |
+| **Python** | 3.10 |
+| **PyTorch** | nightly版推奨（CUDA 12.8対応） |
+| **特記** | RTX 5090 (sm_120) 対応確認済み |
 
-| Model | Open-Source | Model Size | test-zh<br>CER (%) ↓ | test-zh<br>SS (%) ↑ | test-en<br>WER (%) ↓ | test-en<br>SS (%) ↑ | test-hard<br>CER (%) ↓ | test-hard<br>SS (%) ↑ |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Human | - | - | 1.26 | 75.5 | 2.14 | 73.4 | - | - |
-| Seed-TTS | ❌ | - | 1.12 | 79.6 | 2.25 | 76.2 | 7.59 | 77.6 |
-| MiniMax-Speech | ❌ | - | 0.83 | 78.3 | 1.65 | 69.2 | - | - |
-| F5-TTS | ✅ | 0.3B | 1.52 | 74.1 | 2.00 | 64.7 | 8.67 | 71.3 |
-| Spark TTS | ✅ | 0.5B | 1.2 | 66.0 | 1.98 | 57.3 | - | - |
-| CosyVoice2 | ✅ | 0.5B | 1.45 | 75.7 | 2.57 | 65.9 | 6.83 | 72.4 |
-| FireRedTTS2 | ✅ | 1.5B | 1.14 | 73.2 | 1.95 | 66.5 | - | - |
-| Index-TTS2 | ✅ | 1.5B | 1.03 | 76.5 | 2.23 | 70.6 | 7.12 | 75.5 |
-| VibeVoice-1.5B | ✅ | 1.5B | 1.16 | 74.4 | 3.04 | 68.9 | - | - |
-| VibeVoice-Realtime | ✅ | 0.5B | - | - | 2.05 | 63.3 | - | - |
-| HiggsAudio-v2 | ✅ | 3B | 1.50 | 74.0 | 2.44 | 67.7 | - | - |
-| VoxCPM | ✅ | 0.5B | 0.93 | 77.2 | 1.85 | 72.9 | 8.87 | 73.0 |
-| GLM-TTS | ✅ | 1.5B | 1.03 | 76.1 | - | - | - | - |
-| GLM-TTS RL | ✅ | 1.5B | 0.89 | 76.4 | - | - | - | - |
-| Fun-CosyVoice3-0.5B-2512 | ✅ | 0.5B | 1.21 | 78.0 | 2.24 | 71.8 | 6.71 | 75.8 |
-| Fun-CosyVoice3-0.5B-2512_RL | ✅ | 0.5B | 0.81 | 77.4 | 1.68 | 69.5 | 5.44 | 75.0 |
+---
 
+## インストール手順
 
-## Install
+### 1. リポジトリのクローン
 
-### Clone and install
+```bash
+git clone --recursive https://github.com/hiroki-abe-58/CosyVoice-JP.git
+cd CosyVoice-JP
+git submodule update --init --recursive
+```
 
-- Clone the repo
-    ``` sh
-    git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git
-    # If you failed to clone the submodule due to network failures, please run the following command until success
-    cd CosyVoice
-    git submodule update --init --recursive
-    ```
+### 2. Conda環境の作成
 
-- Install Conda: please see https://docs.conda.io/en/latest/miniconda.html
-- Create Conda env:
+```bash
+conda create -n cosyvoice3 python=3.10 -y
+conda activate cosyvoice3
+```
 
-    ``` sh
-    conda create -n cosyvoice -y python=3.10
-    conda activate cosyvoice
-    pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
+### 3. 依存関係のインストール
 
-    # If you encounter sox compatibility issues
-    # ubuntu
-    sudo apt-get install sox libsox-dev
-    # centos
-    sudo yum install sox sox-devel
-    ```
+```bash
+# PyTorch（CUDA 12.8対応、RTX 5090の場合はnightly必須）
+pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
 
-### Model download
+# その他の依存関係
+pip install -r requirements.txt
 
-We strongly recommend that you download our pretrained `Fun-CosyVoice3-0.5B` `CosyVoice2-0.5B` `CosyVoice-300M` `CosyVoice-300M-SFT` `CosyVoice-300M-Instruct` model and `CosyVoice-ttsfrd` resource.
+# Whisper（自動文字起こし用）
+pip install openai-whisper
 
-``` python
-# modelscope SDK model download
-from modelscope import snapshot_download
-snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', local_dir='pretrained_models/Fun-CosyVoice3-0.5B')
-snapshot_download('iic/CosyVoice2-0.5B', local_dir='pretrained_models/CosyVoice2-0.5B')
-snapshot_download('iic/CosyVoice-300M', local_dir='pretrained_models/CosyVoice-300M')
-snapshot_download('iic/CosyVoice-300M-SFT', local_dir='pretrained_models/CosyVoice-300M-SFT')
-snapshot_download('iic/CosyVoice-300M-Instruct', local_dir='pretrained_models/CosyVoice-300M-Instruct')
-snapshot_download('iic/CosyVoice-ttsfrd', local_dir='pretrained_models/CosyVoice-ttsfrd')
+# Windows互換性のための追加パッケージ
+pip install soundfile
+pip install "ruamel.yaml>=0.15.0,<0.18.0"
+```
 
-# for oversea users, huggingface SDK model download
+### 4. モデルのダウンロード
+
+```python
 from huggingface_hub import snapshot_download
-snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', local_dir='pretrained_models/Fun-CosyVoice3-0.5B')
-snapshot_download('FunAudioLLM/CosyVoice2-0.5B', local_dir='pretrained_models/CosyVoice2-0.5B')
-snapshot_download('FunAudioLLM/CosyVoice-300M', local_dir='pretrained_models/CosyVoice-300M')
-snapshot_download('FunAudioLLM/CosyVoice-300M-SFT', local_dir='pretrained_models/CosyVoice-300M-SFT')
-snapshot_download('FunAudioLLM/CosyVoice-300M-Instruct', local_dir='pretrained_models/CosyVoice-300M-Instruct')
-snapshot_download('FunAudioLLM/CosyVoice-ttsfrd', local_dir='pretrained_models/CosyVoice-ttsfrd')
+snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', 
+                  local_dir='pretrained_models/Fun-CosyVoice3-0.5B-2512')
 ```
 
-Optionally, you can unzip `ttsfrd` resource and install `ttsfrd` package for better text normalization performance.
+### 5. 起動
 
-Notice that this step is not necessary. If you do not install `ttsfrd` package, we will use wetext by default.
+**ワンクリック起動:**
+`run.bat` をダブルクリック
 
-``` sh
-cd pretrained_models/CosyVoice-ttsfrd/
-unzip resource.zip -d .
-pip install ttsfrd_dependency-0.1-py3-none-any.whl
-pip install ttsfrd-0.4.2-cp310-cp310-linux_x86_64.whl
+**コマンドラインから:**
+```bash
+conda activate cosyvoice3
+python launcher.py
 ```
 
-### Basic Usage
+ブラウザが自動で開き、`http://localhost:7865` でWebUIにアクセスできます。
+（ポート7865が使用中の場合は自動的に次の空きポートを使用）
 
-We strongly recommend using `Fun-CosyVoice3-0.5B` for better performance.
-Follow the code in `example.py` for detailed usage of each model.
-```sh
-python example.py
+---
+
+## 使い方
+
+### 3秒ボイスクローン（推奨）
+最も高品質な声質クローンが可能なモード
+
+1. プロンプト音声をアップロードまたは録音（3〜30秒）
+2. 「自動文字起こし (Whisper)」ボタンでテキストを取得
+3. 合成テキストを入力
+4. 「音声を生成」をクリック
+
+### 多言語クローン
+プロンプト音声と異なる言語で出力するモード
+
+1. プロンプト音声をアップロード（例：英語の音声）
+2. 合成テキストを別の言語で入力（例：日本語のテキスト）
+3. 「音声を生成」をクリック
+
+### 自然言語制御
+話し方を自然言語で指示するモード
+
+1. プロンプト音声をアップロード
+2. 指示テキストを入力（例：「優しく話して」「早口で」「囁いて」「悲しそうに」）
+3. 言語選択で出力言語を指定（オプション）
+4. 「音声を生成」をクリック
+
+---
+
+## トラブルシューティング
+
+### DLLロードエラーが発生する
 ```
-
-#### vLLM Usage
-CosyVoice2/3 now supports **vLLM 0.11.x+ (V1 engine)** and **vLLM 0.9.0 (legacy)**.
-Older vllm version(<0.9.0) do not support CosyVoice inference, and versions in between (e.g., 0.10.x) are not tested.
-
-Notice that `vllm` has a lot of specific requirements. You can create a new env to in case your hardward do not support vllm and old env is corrupted.
-
-``` sh
-conda create -n cosyvoice_vllm --clone cosyvoice
-conda activate cosyvoice_vllm
-# for vllm==0.9.0
-pip install vllm==v0.9.0 transformers==4.51.3 numpy==1.26.4 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
-# for vllm>=0.11.0
-pip install vllm==v0.11.0 transformers==4.57.1 numpy==1.26.4 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
-python vllm_example.py
+OSError: Error loading c10.dll
 ```
+→ `webui.py`の先頭で`torch`を`gradio`より先にインポートしているか確認
 
-#### Start web demo
-
-You can use our web demo page to get familiar with CosyVoice quickly.
-
-Please see the demo website for details.
-
-``` python
-# change iic/CosyVoice-300M-SFT for sft inference, or iic/CosyVoice-300M-Instruct for instruct inference
-python3 webui.py --port 50000 --model_dir pretrained_models/CosyVoice-300M
+### torchcodecエラーが発生する
 ```
-
-#### Advanced Usage
-
-For advanced users, we have provided training and inference scripts in `examples/libritts`.
-
-#### Build for deployment
-
-Optionally, if you want service deployment,
-You can run the following steps.
-
-``` sh
-cd runtime/python
-docker build -t cosyvoice:v1.0 .
-# change iic/CosyVoice-300M to iic/CosyVoice-300M-Instruct if you want to use instruct inference
-# for grpc usage
-docker run -d --runtime=nvidia -p 50000:50000 cosyvoice:v1.0 /bin/bash -c "cd /opt/CosyVoice/CosyVoice/runtime/python/grpc && python3 server.py --port 50000 --max_conc 4 --model_dir iic/CosyVoice-300M && sleep infinity"
-cd grpc && python3 client.py --port 50000 --mode <sft|zero_shot|cross_lingual|instruct>
-# for fastapi usage
-docker run -d --runtime=nvidia -p 50000:50000 cosyvoice:v1.0 /bin/bash -c "cd /opt/CosyVoice/CosyVoice/runtime/python/fastapi && python3 server.py --port 50000 --model_dir iic/CosyVoice-300M && sleep infinity"
-cd fastapi && python3 client.py --port 50000 --mode <sft|zero_shot|cross_lingual|instruct>
+TorchCodec is required for load_with_torchcodec
 ```
+→ `pip install soundfile` を実行し、`file_utils.py`が更新されているか確認
 
-#### Using Nvidia TensorRT-LLM for deployment
-
-Using TensorRT-LLM to accelerate cosyvoice2 llm could give 4x acceleration comparing with huggingface transformers implementation.
-To quick start:
-
-``` sh
-cd runtime/triton_trtllm
-docker compose up -d
+### ポートが使用中でエラーになる
 ```
-For more details, you could check [here](https://github.com/FunAudioLLM/CosyVoice/tree/main/runtime/triton_trtllm)
+OSError: Cannot find empty port in range
+```
+→ 既存のPythonプロセスを終了するか、`launcher.py`が最新か確認
 
-## Discussion & Communication
+### 音声が中国語っぽくなる
+→ 「自然言語制御」モードで言語選択を「日本語」に設定
 
-You can directly discuss on [Github Issues](https://github.com/FunAudioLLM/CosyVoice/issues).
+### ruamel.yamlエラー
+```
+'Loader' object has no attribute 'max_depth'
+```
+→ `pip install "ruamel.yaml>=0.15.0,<0.18.0"` を実行
 
-You can also scan the QR code to join our official Dingding chat group.
+---
 
-<img src="./asset/dingding.png" width="250px">
+## ライセンス
 
-## Acknowledge
+| コンポーネント | ライセンス |
+|----------------|------------|
+| CosyVoice | Apache License 2.0 (c) Alibaba Inc |
+| Whisper | MIT License (c) OpenAI |
+| Matcha-TTS | MIT License |
+| 本フォーク | Apache License 2.0 |
 
-1. We borrowed a lot of code from [FunASR](https://github.com/modelscope/FunASR).
-2. We borrowed a lot of code from [FunCodec](https://github.com/modelscope/FunCodec).
-3. We borrowed a lot of code from [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS).
-4. We borrowed a lot of code from [AcademiCodec](https://github.com/yangdongchao/AcademiCodec).
-5. We borrowed a lot of code from [WeNet](https://github.com/wenet-e2e/wenet).
+---
 
-## Citations
+## 免責事項
 
-``` bibtex
-@article{du2024cosyvoice,
-  title={Cosyvoice: A scalable multilingual zero-shot text-to-speech synthesizer based on supervised semantic tokens},
-  author={Du, Zhihao and Chen, Qian and Zhang, Shiliang and Hu, Kai and Lu, Heng and Yang, Yexin and Hu, Hangrui and Zheng, Siqi and Gu, Yue and Ma, Ziyang and others},
-  journal={arXiv preprint arXiv:2407.05407},
-  year={2024}
-}
+- 本ソフトウェアは「現状のまま」提供され、明示または黙示を問わず、いかなる種類の保証もありません
+- **音声クローン技術の悪用（なりすまし、詐欺、名誉毀損、ディープフェイク等）は固く禁じます**
+- 生成された音声の利用については、利用者自身の責任において行ってください
+- 本ソフトウェアの使用により生じたいかなる損害についても、開発者は責任を負いません
+- 各国・地域の法令を遵守してご利用ください
+- 他者の権利（肖像権、著作権、パブリシティ権等）を侵害しないようご注意ください
 
-@article{du2024cosyvoice,
-  title={Cosyvoice 2: Scalable streaming speech synthesis with large language models},
-  author={Du, Zhihao and Wang, Yuxuan and Chen, Qian and Shi, Xian and Lv, Xiang and Zhao, Tianyu and Gao, Zhifu and Yang, Yexin and Gao, Changfeng and Wang, Hui and others},
-  journal={arXiv preprint arXiv:2412.10117},
-  year={2024}
-}
+---
 
+## 謝辞
+
+- **元リポジトリ**: [FunAudioLLM/CosyVoice](https://github.com/FunAudioLLM/CosyVoice)
+- Alibaba FunAudioLLM チームの素晴らしい研究に感謝します
+- [OpenAI Whisper](https://github.com/openai/whisper)
+- [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS)
+
+---
+
+## 引用
+
+```bibtex
 @article{du2025cosyvoice,
   title={CosyVoice 3: Towards In-the-wild Speech Generation via Scaling-up and Post-training},
-  author={Du, Zhihao and Gao, Changfeng and Wang, Yuxuan and Yu, Fan and Zhao, Tianyu and Wang, Hao and Lv, Xiang and Wang, Hui and Shi, Xian and An, Keyu and others},
+  author={Du, Zhihao and Gao, Changfeng and Wang, Yuxuan and others},
   journal={arXiv preprint arXiv:2505.17589},
   year={2025}
 }
-
-@inproceedings{lyu2025build,
-  title={Build LLM-Based Zero-Shot Streaming TTS System with Cosyvoice},
-  author={Lyu, Xiang and Wang, Yuxuan and Zhao, Tianyu and Wang, Hao and Liu, Huadai and Du, Zhihao},
-  booktitle={ICASSP 2025-2025 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
-  pages={1--2},
-  year={2025},
-  organization={IEEE}
-}
 ```
-
-## Disclaimer
-The content provided above is for academic purposes only and is intended to demonstrate technical capabilities. Some examples are sourced from the internet. If any content infringes on your rights, please contact us to request its removal.
