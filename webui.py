@@ -20,6 +20,7 @@ import torch
 import torchaudio
 import random
 import librosa
+import soundfile as sf
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append('{}/third_party/Matcha-TTS'.format(ROOT_DIR))
 from cosyvoice.cli.cosyvoice import AutoModel, CosyVoice3
@@ -77,8 +78,8 @@ def generate_audio(tts_text, mode_checkbox_group, sft_dropdown, prompt_text, pro
         if prompt_wav is None:
             gr.Warning('prompt音频为空，您是否忘记输入prompt音频？')
             yield (cosyvoice.sample_rate, default_data)
-        if torchaudio.info(prompt_wav).sample_rate < prompt_sr:
-            gr.Warning('prompt音频采样率{}低于{}'.format(torchaudio.info(prompt_wav).sample_rate, prompt_sr))
+        if sf.info(prompt_wav).samplerate < prompt_sr:
+            gr.Warning('prompt音频采样率{}低于{}'.format(sf.info(prompt_wav).samplerate, prompt_sr))
             yield (cosyvoice.sample_rate, default_data)
     # sft mode only use sft_dropdown
     if mode_checkbox_group in ['预训练音色']:
